@@ -3,95 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kiblat G2R - Pro Sensor</title>
+    <title>Kiblat G2R - Smart Detect</title>
     <style>
-        :root { --primary: #2e7d32; --accent: #e53935; }
-        body { margin: 0; background: #f0f2f5; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .card { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 85%; max-width: 350px; }
+        :root { --primary: #2e7d32; --accent: #e53935; --error: #c62828; }
+        body { margin: 0; background: #f4f7f6; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
         
-        /* Indikator Sensor Aktif */
-        .sensor-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ccc; margin-right: 5px; }
-        .active { background: #4caf50; box-shadow: 0 0 8px #4caf50; }
+        .card { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 85%; max-width: 360px; }
+        
+        /* Overlay Error jika sensor tidak ada */
+        #sensor-error { display: none; color: var(--error); padding: 15px; background: #ffebee; border-radius: 15px; margin-top: 20px; font-weight: bold; font-size: 14px; }
 
         .compass-ring {
-            position: relative;
-            width: 240px; height: 240px;
-            margin: 20px auto;
-            border-radius: 50%;
-            border: 8px solid var(--primary);
-            background: #fff;
-            /* Transisi linear agar gerakan halus */
-            transition: transform 0.1s linear;
+            position: relative; width: 240px; height: 240px; margin: 20px auto;
+            border-radius: 50%; border: 8px solid var(--primary); background: #fff;
+            transition: transform 0.1s linear; opacity: 0.3; /* redup sebelum sensor aktif */
         }
         
-        .dir { position: absolute; font-weight: 900; font-size: 20px; color: #333; }
+        .dir { position: absolute; font-weight: 900; font-size: 18px; color: #333; }
         .n { top: 10px; left: 50%; transform: translateX(-50%); color: var(--accent); }
         .e { right: 15px; top: 50%; transform: translateY(-50%); }
         .s { bottom: 10px; left: 50%; transform: translateX(-50%); }
         .w { left: 15px; top: 50%; transform: translateY(-50%); }
 
-        #qibla-needle {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-        }
+        #qibla-needle { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         .kaaba { position: absolute; top: 35px; left: 50%; transform: translateX(-50%); font-size: 32px; }
         
-        button { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 50px; font-weight: bold; width: 100%; cursor: pointer; font-size: 16px; box-shadow: 0 4px 10px rgba(46,125,50,0.3); }
-        .debug-info { font-size: 11px; color: #888; margin-top: 15px; line-height: 1.5; }
+        button { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 50px; font-weight: bold; width: 100%; cursor: pointer; }
+        #status-msg { font-size: 12px; color: #666; margin: 10px 0; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2 style="color:var(--primary); margin:0;">Kiblat G2R</h2>
-    <div style="margin: 10px 0; font-size: 14px;">
-        <span id="dot" class="sensor-dot"></span> <span id="sensor-stat">Sensor: Nonaktif</span>
-    </div>
+    
+    <div id="status-msg">Menunggu pemeriksaan perangkat...</div>
 
     <div id="ring" class="compass-ring">
-        <div class="dir n">U</div>
-        <div class="dir e">T</div>
-        <div class="dir s">S</div>
-        <div class="dir w">B</div>
+        <div class="dir n">U</div><div class="dir e">T</div>
+        <div class="dir s">S</div><div class="dir w">B</div>
         <div id="qibla-needle">
             <div class="kaaba">🕋</div>
             <div style="position:absolute; top:50%; left:50%; width:4px; height:70px; background:var(--primary); transform:translate(-50%,-100%); clip-path:polygon(50% 0%, 0% 100%, 100% 100%);"></div>
         </div>
     </div>
 
-    <button id="btn">AKTIFKAN SEKARANG</button>
-
-    <div class="debug-info">
-        Sudut Kiblat: <span id="q-deg">-</span>°<br>
-        Arah HP: <span id="h-deg">-</span>°<br>
-        <span id="err" style="color:red"></span>
+    <div id="sensor-error">
+        ❌ PERANGKAT TIDAK DIDUKUNG<br>
+        HP Anda tidak memiliki sensor Magnetometer (Kompas). Aplikasi ini tidak dapat bekerja.
     </div>
+
+    <button id="main-btn">CEK & AKTIFKAN SENSOR</button>
 </div>
 
 <script>
     const ring = document.getElementById('ring');
     const needle = document.getElementById('qibla-needle');
-    const btn = document.getElementById('btn');
-    const dot = document.getElementById('dot');
-    const sensorStat = document.getElementById('sensor-stat');
-    const errText = document.getElementById('err');
+    const btn = document.getElementById('main-btn');
+    const status = document.getElementById('status-msg');
+    const errorBox = document.getElementById('sensor-error');
     
     let qiblaAngle = 0;
+    let sensorDetected = false;
 
     btn.onclick = async () => {
-        // 1. Ambil GPS
-        navigator.geolocation.getCurrentPosition(pos => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            qiblaAngle = calcQibla(lat, lng);
-            document.getElementById('q-deg').innerText = Math.round(qiblaAngle);
-            
-            // 2. Aktifkan Sensor
-            initSensor();
-        }, (err) => {
-            errText.innerText = "GPS Ditolak. Cek pengaturan lokasi Chrome/Safari.";
-        });
+        status.innerText = "Memeriksa sensor Magnetometer...";
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+
+        // 1. Jalankan Cek Sensor & GPS bersamaan
+        checkHardwareAndGPS();
     };
+
+    async function checkHardwareAndGPS() {
+        // Cek GPS dulu
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            qiblaAngle = calcQibla(pos.coords.latitude, pos.coords.longitude);
+            needle.style.transform = `rotate(${qiblaAngle}deg)`;
+            
+            // Setelah GPS dpt, cek Sensor Orientasi
+            await testMagnetometer();
+        }, () => {
+            status.innerText = "Error: GPS wajib aktif.";
+            btn.disabled = false;
+            btn.style.opacity = "1";
+        });
+    }
+
+    function testMagnetometer() {
+        return new Promise((resolve) => {
+            let timeout = setTimeout(() => {
+                if (!sensorDetected) {
+                    showIncompatible();
+                }
+                resolve();
+            }, 2500); // Tunggu 2.5 detik untuk respon sensor
+
+            const sensorHandler = (e) => {
+                let heading = e.webkitCompassHeading || e.alpha;
+                if (heading !== null && heading !== undefined) {
+                    sensorDetected = true;
+                    clearTimeout(timeout);
+                    activateApp();
+                    window.removeEventListener('deviceorientation', sensorHandler);
+                    // Pasang listener permanen
+                    window.addEventListener('deviceorientation', handleUpdate, true);
+                    window.addEventListener('deviceorientationabsolute', handleUpdate, true);
+                }
+            };
+
+            // Minta izin khusus iOS jika perlu
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().then(res => {
+                    if (res === 'granted') window.addEventListener('deviceorientation', sensorHandler, true);
+                });
+            } else {
+                window.addEventListener('deviceorientation', sensorHandler, true);
+                window.addEventListener('deviceorientationabsolute', sensorHandler, true);
+            }
+        });
+    }
+
+    function activateApp() {
+        status.innerText = "Sensor terdeteksi! Silakan gunakan.";
+        ring.style.opacity = "1";
+        btn.style.display = "none";
+    }
+
+    function showIncompatible() {
+        status.style.display = "none";
+        ring.style.display = "none";
+        errorBox.style.display = "block";
+        btn.style.display = "none";
+    }
+
+    function handleUpdate(e) {
+        let heading = e.webkitCompassHeading || (360 - e.alpha);
+        if (heading != null) {
+            ring.style.transform = `rotate(${-heading}deg)`;
+        }
+    }
 
     function calcQibla(lat, lng) {
         const phi1 = lat * Math.PI/180;
@@ -100,45 +151,6 @@
         const y = Math.sin(dL);
         const x = Math.cos(phi1)*Math.tan(phi2) - Math.sin(phi1)*Math.cos(dL);
         return (Math.atan2(y, x) * 180/Math.PI + 360) % 360;
-    }
-
-    async function initSensor() {
-        // Deteksi iOS
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            const permission = await DeviceOrientationEvent.requestPermission();
-            if (permission === 'granted') {
-                window.addEventListener('deviceorientation', handleUpdate, true);
-                activateUI();
-            }
-        } else {
-            // Android: Coba absolute dulu, lalu fallback ke standar
-            if ("ondeviceorientationabsolute" in window) {
-                window.addEventListener("deviceorientationabsolute", handleUpdate, true);
-            } else {
-                window.addEventListener("deviceorientation", handleUpdate, true);
-            }
-            activateUI();
-        }
-    }
-
-    function activateUI() {
-        dot.classList.add('active');
-        sensorStat.innerText = "Sensor: AKTIF";
-        btn.innerText = "KALIBRASI ULANG";
-        btn.onclick = () => location.reload();
-        needle.style.transform = `rotate(${qiblaAngle}deg)`;
-    }
-
-    function handleUpdate(e) {
-        // Kunci penentuan arah utara
-        let heading = e.webkitCompassHeading || (360 - e.alpha);
-        
-        // Cek apakah data alpha benar-benar berubah
-        if (heading !== null && heading !== undefined) {
-            document.getElementById('h-deg').innerText = Math.round(heading);
-            // Putar piringan ke arah sebaliknya dari hadap HP
-            ring.style.transform = `rotate(${-heading}deg)`;
-        }
     }
 </script>
 </body>
