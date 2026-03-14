@@ -48,16 +48,37 @@
             font-size: 16px;
         }
 
-       .compass-base { 
+     .compass-base { 
     position: relative; 
-    width: 230px; height: 230px; 
+    width: 230px; 
+    height: 230px; 
     margin: 20px auto; 
     border-radius: 50%; 
     border: 8px solid var(--primary); 
     background: #fff;
-    /* TAMBAHKAN BARIS INI */
+    /* Transisi agar putaran piringan halus */
     transition: transform 0.1s linear; 
+    /* Mencegah elemen di dalam berantakan */
+    display: block; 
 }
+
+/* Memastikan label arah tetap di posisinya masing-masing */
+.dir { 
+    position: absolute; 
+    font-weight: 900; 
+    font-size: 18px; 
+    color: #333; 
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.n { top: 10px; left: 50%; transform: translateX(-50%); color: var(--accent); }
+.e { right: 10px; top: 50%; transform: translateY(-50%); }
+.s { bottom: 10px; left: 50%; transform: translateX(-50%); }
+.w { left: 10px; top: 50%; transform: translateY(-50%); }
         
         #pointer-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transition: transform 0.1s linear; }
         .kaaba { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); font-size: 35px; }
@@ -176,17 +197,16 @@
     }
 
     function handleMove(e) {
-    // 1. Ambil arah hadap HP (heading)
     let heading = e.webkitCompassHeading || (360 - e.alpha);
     
     if (heading != null) {
-        // 2. PUTAR SELURUH PIRINGAN (base) agar U selalu ke Utara asli
-        // Kita memutar ke arah negatif heading
         const ringBase = document.querySelector('.compass-base');
-        ringBase.style.transform = `rotate(${-heading}deg)`;
         
-        // 3. PUTAR JARUM KIBLAT agar selalu menunjuk Ka'bah relatif terhadap Utara
-        // Karena piringan sudah berputar, jarum cukup menunjuk ke sudut kiblatnya saja
+        // Memutar seluruh piringan agar U selalu menunjuk ke Utara Sejati
+        ringBase.style.transform = `rotate(${-heading}deg);`;
+        
+        // Memutar jarum Ka'bah di dalam piringan tersebut
+        // qiblaAngle adalah sudut kiblat dari lokasi user
         pointer.style.transform = `rotate(${qiblaAngle}deg)`;
     }
 }
