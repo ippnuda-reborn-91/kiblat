@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Qibla Finder</title>
+    <style>
+        body { margin: 0; background: #f0f2f5; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .card { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 350px; }
+        h2 { color: #2e7d32; margin-bottom: 5px; }
+        #status { font-size: 13px; color: #666; margin-bottom: 20px; }
+        .compass-area { position: relative; width: 220px; height: 220px; margin: 0 auto 30px; }
+        #compass { width: 100%; height: 100%; border: 8px solid #2e7d32; border-radius: 50%; position: relative; transition: transform 0.1s linear; }
+        .kaaba { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 32px; }
+        .arrow { position: absolute; top: 50%; left: 50%; width: 4px; height: 90px; background: #e53935; transform: translate(-50%, -100%); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+        button { background: #2e7d32; color: white; border: none; padding: 15px 25px; border-radius: 50px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Qibla Finder ippnuda</h2>
+    <p id="status">Klik untuk mengaktifkan</p>
+    
+    <div class="compass-area">
+        <div id="compass">
+            <div class="kaaba">🕋</div>
+            <div class="arrow"></div>
+        </div>
+    </div>
+
+    <button id="btn">MULAI NAVIGASI</button>
+</div>
+
+<script>
+    const kaaba = { lat: 21.4225, lng: 39.8262 };
+    let target = 0;
+    const btn = document.getElementById('btn');
+    const compass = document.getElementById('compass');
+    const status = document.getElementById('status');
+
+    function getQibla(lat, lng) {
+        const p1 = lat * Math.PI / 180;
+        const p2 = kaaba.lat * Math.PI / 180;
+        const dL = (kaaba.lng - lng) * Math.PI / 180;
+        const y = Math.sin(dL);
+        const x = Math.cos(p1) * Math.tan(p2) - Math.sin(p1) * Math.cos(dL);
+        return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    }
+
+    btn.onclick = async () => {
+        status.innerText = "Mencari Lokasi...";
+        
+        navigator.geolocation.getCurrentPosition(pos => {
+            target = getQibla(pos.coords.latitude, pos.coords.longitude);
+            status.innerText = "Lokasi Terkunci. Izinkan Sensor.";
+            initSensor();
+        }, () => { status.innerText = "Gagal akses lokasi."; });
+    };
+
+    async function initSensor() {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            const res = await DeviceOrientationEvent.requestPermission();
+            if (res === 'granted') window.addEventListener('deviceorientation', rotate);
+        } else {
+            window.addEventListener('deviceorientationabsolute', rotate);
+            window.addEventListener('deviceorientation', rotate);
+        }
+        btn.style.display = 'none';
+    }
+
+    function rotate(e) {
+        let heading = e.webkitCompassHeading || (360 - e.alpha);
+        if (heading) {
+            compass.style.transform = `rotate(${target - heading}deg)`;
+            status.innerText = "Kiblat Terdeteksi";
+        }
+    }
+</script>
+</body>
+</html>
