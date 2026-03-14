@@ -3,79 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Qibla Finder</title>
+    <title>Kiblat G2R - PWA</title>
     <style>
-        body { margin: 0; background: #f0f2f5; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        .card { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 350px; }
-        h2 { color: #2e7d32; margin-bottom: 5px; }
-        #status { font-size: 13px; color: #666; margin-bottom: 20px; }
-        .compass-area { position: relative; width: 220px; height: 220px; margin: 0 auto 30px; }
-        #compass { width: 100%; height: 100%; border: 8px solid #2e7d32; border-radius: 50%; position: relative; transition: transform 0.1s linear; }
-        .kaaba { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); font-size: 32px; }
-        .arrow { position: absolute; top: 50%; left: 50%; width: 4px; height: 90px; background: #e53935; transform: translate(-50%, -100%); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
-        button { background: #2e7d32; color: white; border: none; padding: 15px 25px; border-radius: 50px; font-weight: bold; width: 100%; font-size: 16px; cursor: pointer; }
+        :root {
+            --primary: #2e7d32;
+            --accent: #e53935;
+            --bg: #f4f7f6;
+        }
+        body { 
+            margin: 0; 
+            background: var(--bg); 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            overflow: hidden;
+        }
+        .card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 30px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            text-align: center; 
+            width: 85%; 
+            max-width: 380px; 
+        }
+        h2 { color: var(--primary); margin: 0 0 5px 0; }
+        #status { font-size: 14px; color: #777; margin-bottom: 20px; height: 20px; }
+        
+        /* Kompas Visual */
+        .compass-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: 0 auto 25px;
+        }
+        #compass-ring {
+            width: 100%;
+            height: 100%;
+            border: 8px solid var(--primary);
+            border-radius: 50%;
+            position: relative;
+            transition: transform 0.2s cubic-bezier(0.1, 0.5, 0.1, 1);
+            box-sizing: border-box;
+            background: #fff;
+        }
+        
+        /* Label Mata Angin */
+        .direction {
+            position: absolute;
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+        }
+        .n { top: 10px; left: 50%; transform: translateX(-50%); color: var(--accent); }
+        .e { right: 10px; top: 50%; transform: translateY(-50%); }
+        .s { bottom: 10px; left: 50%; transform: translateX(-50%); }
+        .w { left: 10px; top: 50%; transform: translateY(-50%); }
+
+        .kaaba-marker {
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 35px;
+            z-index: 10;
+        }
+        .needle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 100px;
+            background: var(--accent);
+            transform: translate(-50%, -100%);
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        }
+
+        /* Tombol */
+        .btn-group { display: flex; flex-direction: column; gap: 10px; }
+        button {
+            border: none;
+            padding: 15px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        #start-btn { background: var(--primary); color: white; }
+        #reset-btn { background: #eee; color: #555; display: none; }
+        button:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Qibla Finder ippnuda</h2>
-    <p id="status">Klik untuk mengaktifkan</p>
+    <h2>Kiblat Ippnuda</h2>
+    <p id="status">Siap mendeteksi arah</p>
     
-    <div class="compass-area">
-        <div id="compass">
-            <div class="kaaba">🕋</div>
-            <div class="arrow"></div>
+    <div class="compass-container">
+        <div id="compass-ring">
+            <div class="direction n">U</div>
+            <div class="direction e">T</div>
+            <div class="direction s">S</div>
+            <div class="direction w">B</div>
+            <div class="kaaba-marker">🕋</div>
+            <div class="needle"></div>
         </div>
     </div>
 
-    <button id="btn">MULAI NAVIGASI</button>
+    <div class="btn-group">
+        <button id="start-btn">AKTIFKAN KOMPAS</button>
+        <button id="reset-btn" onclick="location.reload()">MULAI ULANG PENCARIAN</button>
+    </div>
 </div>
 
 <script>
-    const kaaba = { lat: 21.4225, lng: 39.8262 };
-    let target = 0;
-    const btn = document.getElementById('btn');
-    const compass = document.getElementById('compass');
-    const status = document.getElementById('status');
+    const kaabaCoord = { lat: 21.4225, lng: 39.8262 };
+    let qiblaAngle = 0;
+    const startBtn = document.getElementById('start-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const ring = document.getElementById('compass-ring');
+    const statusTxt = document.getElementById('status');
 
-    function getQibla(lat, lng) {
-        const p1 = lat * Math.PI / 180;
-        const p2 = kaaba.lat * Math.PI / 180;
-        const dL = (kaaba.lng - lng) * Math.PI / 180;
+    function calculateQibla(lat, lng) {
+        const phi1 = lat * Math.PI / 180;
+        const phi2 = kaabaCoord.lat * Math.PI / 180;
+        const dL = (kaabaCoord.lng - lng) * Math.PI / 180;
         const y = Math.sin(dL);
-        const x = Math.cos(p1) * Math.tan(p2) - Math.sin(p1) * Math.cos(dL);
+        const x = Math.cos(phi1) * Math.tan(phi2) - Math.sin(phi1) * Math.cos(dL);
         return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
     }
 
-    btn.onclick = async () => {
-        status.innerText = "Mencari Lokasi...";
+    startBtn.onclick = async () => {
+        statusTxt.innerText = "Mencari GPS...";
         
-        navigator.geolocation.getCurrentPosition(pos => {
-            target = getQibla(pos.coords.latitude, pos.coords.longitude);
-            status.innerText = "Lokasi Terkunci. Izinkan Sensor.";
-            initSensor();
-        }, () => { status.innerText = "Gagal akses lokasi."; });
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                qiblaAngle = calculateQibla(pos.coords.latitude, pos.coords.longitude);
+                statusTxt.innerText = "GPS Terkunci. Putar Perangkat.";
+                initOrientation();
+            },
+            (err) => {
+                statusTxt.innerText = "Gagal akses lokasi. Periksa izin GPS.";
+            },
+            { enableHighAccuracy: true }
+        );
     };
 
-    async function initSensor() {
+    async function initOrientation() {
+        // Cek Izin Sensor (iOS)
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            const res = await DeviceOrientationEvent.requestPermission();
-            if (res === 'granted') window.addEventListener('deviceorientation', rotate);
+            try {
+                const permission = await DeviceOrientationEvent.requestPermission();
+                if (permission === 'granted') {
+                    window.addEventListener('deviceorientation', updateCompass, true);
+                }
+            } catch (e) { statusTxt.innerText = "Izin sensor ditolak."; }
         } else {
-            window.addEventListener('deviceorientationabsolute', rotate);
-            window.addEventListener('deviceorientation', rotate);
+            // Android
+            window.addEventListener('deviceorientationabsolute', updateCompass, true);
+            window.addEventListener('deviceorientation', updateCompass, true);
         }
-        btn.style.display = 'none';
+        startBtn.style.display = 'none';
+        resetBtn.style.display = 'block';
     }
 
-    function rotate(e) {
+    function updateCompass(e) {
         let heading = e.webkitCompassHeading || (360 - e.alpha);
+        
         if (heading) {
-            compass.style.transform = `rotate(${target - heading}deg)`;
-            status.innerText = "Kiblat Terdeteksi";
+            // Rotasi kompas
+            const rotation = qiblaAngle - heading;
+            ring.style.transform = `rotate(${rotation}deg)`;
+            
+            // Memberikan umpan balik jika hampir tepat ke Ka'bah (toleransi 5 derajat)
+            const diff = Math.abs((rotation % 360));
+            if (diff < 5 || diff > 355) {
+                statusTxt.innerText = "🎯 ARAH KIBLAT TEPAT";
+                statusTxt.style.color = "var(--primary)";
+            } else {
+                statusTxt.innerText = "Putar terus sampai 🕋 di atas";
+                statusTxt.style.color = "#777";
+            }
         }
     }
 </script>
+
 </body>
 </html>
