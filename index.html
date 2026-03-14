@@ -117,13 +117,17 @@
     <h2 style="color:var(--primary); margin:0; font-size: 22px;">kompas ippnuda</h2>
     <div id="status">siap digunakan</div>
 
-    <div class="compass-base">
-        <div class="dir n">U</div><div class="dir e">T</div><div class="dir s">S</div><div class="dir w">B</div>
-        <div id="pointer-wrapper">
-            <div class="kaaba">🕋</div>
-            <div class="needle"></div>
-        </div>
+    <div id="ring" class="compass-base">
+    <div class="dir n">u</div>
+    <div class="dir e">t</div>
+    <div class="dir s">s</div>
+    <div class="dir w">b</div>
+    
+    <div id="pointer-wrapper">
+        <div class="kaaba">🕋</div>
+        <div class="needle"></div>
     </div>
+</div>
 
     <div id="error-box">
         <b>sensor tidak ditemukan:</b><br>
@@ -197,16 +201,19 @@
     }
 
     function handleMove(e) {
+    // Ambil sudut hadap HP (heading)
     let heading = e.webkitCompassHeading || (360 - e.alpha);
     
-    if (heading != null) {
-        const ringBase = document.querySelector('.compass-base');
+    if (heading !== null && heading !== undefined) {
+        // Ambil elemen piringan kompas
+        const ringBase = document.getElementById('ring'); 
         
-        // Memutar seluruh piringan agar U selalu menunjuk ke Utara Sejati
-        ringBase.style.transform = `rotate(${-heading}deg);`;
+        // Putar piringan: NORTH (U) akan selalu diam ke arah utara asli dunia
+        // Gunakan tanda backtick (`) dan tanpa titik koma di dalam fungsi rotate
+        ringBase.style.transform = `rotate(${-heading}deg)`;
         
-        // Memutar jarum Ka'bah di dalam piringan tersebut
-        // qiblaAngle adalah sudut kiblat dari lokasi user
+        // Putar jarum: Tetap menunjuk ke sudut Kiblat
+        // pointer adalah elemen pointer-wrapper
         pointer.style.transform = `rotate(${qiblaAngle}deg)`;
     }
 }
