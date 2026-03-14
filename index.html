@@ -3,98 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kiblat G2R - PWA</title>
+    <title>Kiblat Ippnuda</title>
     <style>
         :root {
-            --primary: #2e7d32;
-            --accent: #e53935;
+            --primary: #2e7d32; /* Hijau Utama */
+            --accent: #e53935;  /* Merah Jarum */
             --bg: #f4f7f6;
+            --compass-bg: #ffffff;
         }
+        
         body { 
             margin: 0; 
             background: var(--bg); 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
+            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             height: 100vh; 
-            overflow: hidden;
+            overflow: hidden; /* Mencegah scroll di HP */
         }
+        
         .card { 
             background: white; 
-            padding: 25px; 
+            padding: 30px; 
             border-radius: 30px; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
             text-align: center; 
             width: 85%; 
             max-width: 380px; 
+            position: relative;
         }
-        h2 { color: var(--primary); margin: 0 0 5px 0; }
-        #status { font-size: 14px; color: #777; margin-bottom: 20px; height: 20px; }
         
-        /* Kompas Visual */
+        h2 { color: var(--primary); margin: 0 0 5px 0; font-size: 24px; }
+        #status { font-size: 14px; color: #777; margin-bottom: 25px; height: 20px; font-weight: 500; }
+        
+        /* Wadah Utama Kompas */
         .compass-container {
             position: relative;
-            width: 260px;
-            height: 260px;
-            margin: 0 auto 25px;
-        }
-        #compass-ring {
-            width: 100%;
-            height: 100%;
-            border: 8px solid var(--primary);
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 30px;
             border-radius: 50%;
-            position: relative;
-            transition: transform 0.2s cubic-bezier(0.1, 0.5, 0.1, 1);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+            background: var(--compass-bg);
+            border: 8px solid var(--primary);
             box-sizing: border-box;
-            background: #fff;
         }
         
-        /* Label Mata Angin */
+        /* Label Mata Angin (DIAM) */
         .direction {
             position: absolute;
-            font-weight: bold;
-            font-size: 18px;
+            font-weight: 800;
+            font-size: 20px;
             color: #333;
+            z-index: 1;
         }
-        .n { top: 10px; left: 50%; transform: translateX(-50%); color: var(--accent); }
-        .e { right: 10px; top: 50%; transform: translateY(-50%); }
-        .s { bottom: 10px; left: 50%; transform: translateX(-50%); }
-        .w { left: 10px; top: 50%; transform: translateY(-50%); }
+        /* Utara (Merah) selalu di atas */
+        .n { top: 15px; left: 50%; transform: translateX(-50%); color: var(--accent); }
+        .e { right: 15px; top: 50%; transform: translateY(-50%); }
+        .s { bottom: 15px; left: 50%; transform: translateX(-50%); }
+        .w { left: 15px; top: 50%; transform: translateY(-50%); }
 
+        /* --- Bagian yang BERPUTAR --- */
+        #pointer-wrapper {
+            position: absolute;
+            top: 0; 
+            left: 0;
+            width: 100%; 
+            height: 100%;
+            /* Transisi halus saat berputar */
+            transition: transform 0.1s cubic-bezier(0.1, 0.5, 0.1, 1);
+            z-index: 2;
+        }
+        
+        /* Ikon Ka'bah di ujung jarum */
         .kaaba-marker {
             position: absolute;
-            top: -35px;
+            top: 40px; /* Posisi di dalam lingkaran */
             left: 50%;
             transform: translateX(-50%);
-            font-size: 35px;
-            z-index: 10;
+            font-size: 36px;
         }
+        
+        /* Jarum Penunjuk */
         .needle {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 4px;
-            height: 100px;
-            background: var(--accent);
+            width: 6px;
+            height: 90px;
+            background: var(--primary); /* Warna hijau untuk badan jarum */
             transform: translate(-50%, -100%);
             clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            border-radius: 2px;
+        }
+        /* --- Akhir Bagian yang BERPUTAR --- */
+
+        /* Titik Tengah Kompas */
+        .center-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 15px;
+            height: 15px;
+            background: var(--primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            border: 2px solid white;
         }
 
         /* Tombol */
         .btn-group { display: flex; flex-direction: column; gap: 10px; }
         button {
             border: none;
-            padding: 15px;
+            padding: 18px;
             border-radius: 50px;
             font-weight: bold;
             font-size: 16px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.3s ease;
+            width: 100%;
         }
-        #start-btn { background: var(--primary); color: white; }
-        #reset-btn { background: #eee; color: #555; display: none; }
-        button:active { transform: scale(0.98); }
+        
+        #start-btn { 
+            background: var(--primary); 
+            color: white; 
+            box-shadow: 0 5px 15px rgba(46, 125, 50, 0.3);
+        }
+        #start-btn:hover { background: #1b5e20; }
+        
+        #reset-btn { 
+            background: #f0f0f0; 
+            color: #555; 
+            display: none; /* Sembunyi di awal */
+        }
+        #reset-btn:hover { background: #e0e0e0; }
+        
+        button:active { transform: scale(0.97); }
     </style>
 </head>
 <body>
@@ -104,11 +150,14 @@
     <p id="status">Siap mendeteksi arah</p>
     
     <div class="compass-container">
-        <div id="compass-ring">
-            <div class="direction n">U</div>
-            <div class="direction e">T</div>
-            <div class="direction s">S</div>
-            <div class="direction w">B</div>
+        <div class="direction n">U</div>
+        <div class="direction e">T</div>
+        <div class="direction s">S</div>
+        <div class="direction w">B</div>
+        
+        <div class="center-dot"></div>
+        
+        <div id="pointer-wrapper">
             <div class="kaaba-marker">🕋</div>
             <div class="needle"></div>
         </div>
@@ -122,12 +171,14 @@
 
 <script>
     const kaabaCoord = { lat: 21.4225, lng: 39.8262 };
-    let qiblaAngle = 0;
+    let qiblaAngle = 0; // Sudut absolut Kiblat dari lokasi user
+    
     const startBtn = document.getElementById('start-btn');
     const resetBtn = document.getElementById('reset-btn');
-    const ring = document.getElementById('compass-ring');
+    const pointerWrapper = document.getElementById('pointer-wrapper');
     const statusTxt = document.getElementById('status');
 
+    // Rumus Haversine untuk menghitung sudut Kiblat
     function calculateQibla(lat, lng) {
         const phi1 = lat * Math.PI / 180;
         const phi2 = kaabaCoord.lat * Math.PI / 180;
@@ -137,55 +188,82 @@
         return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
     }
 
+    // Fungsi saat tombol "AKTIFKAN" diklik
     startBtn.onclick = async () => {
         statusTxt.innerText = "Mencari GPS...";
+        startBtn.innerText = "MEMINTA IZIN...";
         
+        // 1. Meminta Izin Lokasi (GPS)
         navigator.geolocation.getCurrentPosition(
             (pos) => {
+                // GPS Berhasil
                 qiblaAngle = calculateQibla(pos.coords.latitude, pos.coords.longitude);
-                statusTxt.innerText = "GPS Terkunci. Putar Perangkat.";
-                initOrientation();
+                statusTxt.innerText = "GPS Aktif. Izinkan Sensor Gerak.";
+                initOrientationSensor();
             },
             (err) => {
-                statusTxt.innerText = "Gagal akses lokasi. Periksa izin GPS.";
+                // GPS Gagal
+                statusTxt.innerText = "Gagal akses lokasi. Periksa izin GPS HP.";
+                startBtn.innerText = "COBA LAGI";
             },
-            { enableHighAccuracy: true }
+            { enableHighAccuracy: true, timeout: 10000 }
         );
     };
 
-    async function initOrientation() {
-        // Cek Izin Sensor (iOS)
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // Fungsi untuk meminta izin Sensor Orientasi (Kompas)
+    async function initOrientationSensor() {
+        // Cek apakah browser memerlukan izin eksplisit (khusus iOS)
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
                 const permission = await DeviceOrientationEvent.requestPermission();
                 if (permission === 'granted') {
                     window.addEventListener('deviceorientation', updateCompass, true);
+                    showResetButton();
+                } else {
+                    statusTxt.innerText = "Izin sensor kompas ditolak.";
                 }
-            } catch (e) { statusTxt.innerText = "Izin sensor ditolak."; }
+            } catch (e) { 
+                statusTxt.innerText = "Error sensor: Buka di browser asli."; 
+            }
         } else {
-            // Android
-            window.addEventListener('deviceorientationabsolute', updateCompass, true);
-            window.addEventListener('deviceorientation', updateCompass, true);
+            // Android / Browser non-iOS lainnya
+            if ('ondeviceorientationabsolute' in window) {
+                window.addEventListener('deviceorientationabsolute', updateCompass, true);
+            } else {
+                window.addEventListener('deviceorientation', updateCompass, true);
+            }
+            showResetButton();
         }
+    }
+
+    // Fungsi untuk menyembunyikan tombol start dan memunculkan tombol reset
+    function showResetButton() {
         startBtn.style.display = 'none';
         resetBtn.style.display = 'block';
     }
 
+    // Fungsi utama untuk memutar jarum kompas
     function updateCompass(e) {
+        // Hadap HP saat ini (dari Utara asli)
         let heading = e.webkitCompassHeading || (360 - e.alpha);
         
-        if (heading) {
-            // Rotasi kompas
+        if (heading !== null && heading !== undefined) {
+            // Logika: Putar Jarum ke arah (Sudut Kiblat - Arah Hadap HP)
+            // Ini akan membuat jarum selalu menunjuk ke Ka'bah relatif terhadap HP
             const rotation = qiblaAngle - heading;
-            ring.style.transform = `rotate(${rotation}deg)`;
             
-            // Memberikan umpan balik jika hampir tepat ke Ka'bah (toleransi 5 derajat)
-            const diff = Math.abs((rotation % 360));
-            if (diff < 5 || diff > 355) {
+            // Terapkan rotasi pada wrapper yang berisi Jarum & Ka'bah
+            pointerWrapper.style.transform = `rotate(${rotation}deg)`;
+            
+            // Umpan balik visual jika arahnya tepat
+            const normalizedRotation = (rotation % 360 + 360) % 360;
+            
+            // Toleransi 5 derajat untuk dianggap "Tepat"
+            if (normalizedRotation < 5 || normalizedRotation > 355) {
                 statusTxt.innerText = "🎯 ARAH KIBLAT TEPAT";
                 statusTxt.style.color = "var(--primary)";
             } else {
-                statusTxt.innerText = "Putar terus sampai 🕋 di atas";
+                statusTxt.innerText = "Putar HP sampai 🕋 di posisi UTARA (U)";
                 statusTxt.style.color = "#777";
             }
         }
