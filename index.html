@@ -3,137 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kiblat G2R - High Accuracy</title>
+    <title>Kiblat Ippnuda</title>
     <style>
         :root { --primary: #2e7d32; --accent: #e53935; --bg: #f4f7f6; }
-        body { margin: 0; background: var(--bg); font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .card { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 85%; max-width: 380px; }
+        body { margin: 0; background: var(--bg); font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         
-        .compass-container {
+        /* Label Sisi Layar */
+        .edge-label { position: absolute; font-weight: bold; color: #999; font-size: 14px; text-transform: uppercase; }
+        .edge-top { top: 10px; }
+        .edge-bottom { bottom: 10px; }
+        .edge-left { left: 10px; transform: rotate(-90deg); }
+        .edge-right { right: 10px; transform: rotate(90deg); }
+        .active-dir { color: var(--accent) !important; font-size: 18px !important; }
+
+        .card { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 85%; max-width: 380px; z-index: 10; }
+        
+        /* Kompas Utama yang Berputar */
+        .compass-ring {
             position: relative;
-            width: 250px;
-            height: 250px;
+            width: 260px;
+            height: 260px;
             margin: 20px auto;
             border-radius: 50%;
-            background: #fff;
             border: 8px solid var(--primary);
+            background: #fff;
+            transition: transform 0.1s linear;
         }
         
-        /* Mata Angin Tetap */
-        .dir { position: absolute; font-weight: 800; font-size: 18px; color: #333; }
+        /* Label di dalam Lingkaran */
+        .dir { position: absolute; font-weight: 800; font-size: 20px; color: #333; }
         .n { top: 10px; left: 50%; transform: translateX(-50%); color: var(--accent); }
         .e { right: 10px; top: 50%; transform: translateY(-50%); }
         .s { bottom: 10px; left: 50%; transform: translateX(-50%); }
         .w { left: 10px; top: 50%; transform: translateY(-50%); }
 
-        #pointer-wrapper {
+        /* Jarum Kiblat (Tetap Berputar di dalam Lingkaran) */
+        #qibla-pointer {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            transition: transform 0.1s linear;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5;
         }
-        
-        .kaaba { position: absolute; top: 35px; left: 50%; transform: translateX(-50%); font-size: 35px; }
+        .kaaba { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); font-size: 30px; }
         .needle { position: absolute; top: 50%; left: 50%; width: 4px; height: 80px; background: var(--primary); transform: translate(-50%, -100%); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
-        
-        .info-box { background: #eee; border-radius: 10px; padding: 10px; margin-bottom: 20px; font-size: 13px; }
-        button { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 50px; font-weight: bold; width: 100%; cursor: pointer; }
-        
-        #calibration-msg { display: none; font-size: 12px; color: var(--accent); margin-top: 10px; font-weight: bold; }
+
+        button { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 50px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2 style="color: var(--primary); margin:0;">Kiblat G2R</h2>
-    <div id="degree-display" style="font-size: 24px; font-weight: bold; margin: 10px 0;">0°</div>
-    <div id="status" style="font-size: 13px; color: #666; margin-bottom: 10px;">Tekan tombol untuk memulai</div>
+<div id="label-top" class="edge-label edge-top">Atas HP</div>
+<div id="label-bottom" class="edge-label edge-bottom">Bawah HP</div>
+<div id="label-left" class="edge-label edge-left">Kiri HP</div>
+<div id="label-right" class="edge-label edge-right">Kanan HP</div>
 
-    <div class="compass-container">
+<div class="card">
+    <h2 style="color: var(--primary); margin:0;">Kiblat Ippnuda</h2>
+    <div id="heading-val" style="font-size: 32px; font-weight: bold; margin: 10px 0;">---°</div>
+    <p id="status" style="font-size: 13px; color: #666;">Klik tombol untuk mencari Utara</p>
+
+    <div id="main-compass" class="compass-ring">
         <div class="dir n">U</div>
         <div class="dir e">T</div>
         <div class="dir s">S</div>
         <div class="dir w">B</div>
-        <div id="pointer-wrapper">
+        
+        <div id="qibla-pointer">
             <div class="kaaba">🕋</div>
             <div class="needle"></div>
         </div>
     </div>
 
-    <div class="info-box">
-        <div id="qibla-deg">Sudut Kiblat: -</div>
-        <div id="calibration-msg">⚠️ Putar HP Anda membentuk angka 8 untuk kalibrasi!</div>
-    </div>
-
-    <button id="btn-start">AKTIFKAN ARAH</button>
+    <button id="btn-init">AKTIFKAN SENSOR</button>
 </div>
 
 <script>
-    const kaaba = { lat: 21.4225, lng: 39.8262 };
+    const makkah = { lat: 21.4225, lng: 39.8262 };
     let qiblaAngle = 0;
-    const btn = document.getElementById('btn-start');
-    const pointer = document.getElementById('pointer-wrapper');
+    const btn = document.getElementById('btn-init');
+    const ring = document.getElementById('main-compass');
+    const pointer = document.getElementById('qibla-pointer');
+    const headingTxt = document.getElementById('heading-val');
     const status = document.getElementById('status');
-    const degDisplay = document.getElementById('degree-display');
-    const qiblaDisplay = document.getElementById('qibla-deg');
 
     function getQibla(lat, lng) {
         const p1 = lat * Math.PI / 180;
-        const p2 = kaaba.lat * Math.PI / 180;
-        const dL = (kaaba.lng - lng) * Math.PI / 180;
+        const p2 = makkah.lat * Math.PI / 180;
+        const dL = (makkah.lng - lng) * Math.PI / 180;
         const y = Math.sin(dL);
         const x = Math.cos(p1) * Math.tan(p2) - Math.sin(p1) * Math.cos(dL);
         return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
     }
 
     btn.onclick = async () => {
-        status.innerText = "Mencari GPS...";
+        status.innerText = "Mendeteksi Lokasi...";
         navigator.geolocation.getCurrentPosition(pos => {
             qiblaAngle = getQibla(pos.coords.latitude, pos.coords.longitude);
-            qiblaDisplay.innerText = "Sudut Kiblat: " + qiblaAngle.toFixed(1) + "° dari Utara";
-            status.innerText = "GPS Terkunci. Mengaktifkan Kompas...";
+            status.innerText = "Lokasi Berhasil. Aktifkan Sensor...";
             initSensors();
-        }, () => { status.innerText = "Gagal akses lokasi."; });
+        }, () => { status.innerText = "GPS Gagal. Pastikan Izin Aktif."; });
     };
 
     async function initSensors() {
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
             const res = await DeviceOrientationEvent.requestPermission();
-            if (res === 'granted') window.addEventListener('deviceorientation', handleMove, true);
+            if (res === 'granted') window.addEventListener('deviceorientation', handleMotion, true);
         } else {
-            // Gunakan absolute orientation untuk akurasi mata angin yang lebih baik (Android)
-            window.addEventListener('deviceorientationabsolute', handleMove, true);
-            // Fallback
-            window.addEventListener('deviceorientation', handleMove, true);
+            window.addEventListener('deviceorientationabsolute', handleMotion, true);
+            window.addEventListener('deviceorientation', handleMotion, true);
         }
-        btn.innerText = "MULAI ULANG";
+        btn.innerText = "RESET / MULAI ULANG";
         btn.onclick = () => location.reload();
-        document.getElementById('calibration-msg').style.display = 'block';
     }
 
-    function handleMove(e) {
-        // Mengambil arah utara sejati
+    function handleMotion(e) {
         let heading = e.webkitCompassHeading || (360 - e.alpha);
         
-        if (heading !== null) {
-            // Tampilkan derajat hadap HP saat ini
-            const currentHeading = Math.round(heading);
-            degDisplay.innerText = currentHeading + "°";
+        if (heading != null) {
+            const h = Math.round(heading);
+            headingTxt.innerText = h + "°";
+            
+            // 1. Putar Ring Mata Angin (Agar U selalu ke Utara asli)
+            ring.style.transform = `rotate(${-h}deg)`;
+            
+            // 2. Putar Jarum Kiblat relatif terhadap Utara
+            pointer.style.transform = `rotate(${qiblaAngle}deg)`;
 
-            // Hitung rotasi jarum kiblat
-            const rotation = qiblaAngle - heading;
-            pointer.style.transform = `rotate(${rotation}deg)`;
-
-            // Deteksi arah mata angin dasar untuk membantu user
-            if (currentHeading >= 337 || currentHeading < 23) status.innerText = "Anda menghadap: UTARA";
-            else if (currentHeading >= 23 && currentHeading < 67) status.innerText = "Anda menghadap: TIMUR LAUT";
-            else if (currentHeading >= 67 && currentHeading < 112) status.innerText = "Anda menghadap: TIMUR";
-            else if (currentHeading >= 112 && currentHeading < 157) status.innerText = "Anda menghadap: TENGGARA";
-            else if (currentHeading >= 157 && currentHeading < 202) status.innerText = "Anda menghadap: SELATAN";
-            else if (currentHeading >= 202 && currentHeading < 247) status.innerText = "Anda menghadap: BARAT DAYA";
-            else if (currentHeading >= 247 && currentHeading < 292) status.innerText = "Anda menghadap: BARAT";
-            else if (currentHeading >= 292 && currentHeading < 337) status.innerText = "Anda menghadap: BARAT LAUT";
+            // 3. Update Label Sisi Layar
+            updateEdgeLabels(h);
         }
+    }
+
+    function updateEdgeLabels(h) {
+        const labels = {
+            top: document.getElementById('label-top'),
+            bottom: document.getElementById('label-bottom'),
+            left: document.getElementById('label-left'),
+            right: document.getElementById('label-right')
+        };
+
+        // Reset warna
+        Object.values(labels).forEach(el => {
+            el.classList.remove('active-dir');
+            el.innerText = el.id.replace('label-', '') + " hp";
+        });
+
+        // Deteksi sisi mana yang paling dekat dengan Utara (0° / 360°)
+        if (h >= 315 || h < 45) { labels.top.classList.add('active-dir'); labels.top.innerText = "UTARA"; status.innerText = "Atas HP menghadap Utara"; }
+        else if (h >= 45 && h < 135) { labels.right.classList.add('active-dir'); labels.right.innerText = "UTARA"; status.innerText = "Samping Kanan menghadap Utara"; }
+        else if (h >= 135 && h < 225) { labels.bottom.classList.add('active-dir'); labels.bottom.innerText = "UTARA"; status.innerText = "Bawah HP menghadap Utara"; }
+        else if (h >= 225 && h < 315) { labels.left.classList.add('active-dir'); labels.left.innerText = "UTARA"; status.innerText = "Samping Kiri menghadap Utara"; }
     }
 </script>
 </body>
