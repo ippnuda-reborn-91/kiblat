@@ -1,0 +1,2 @@
+# kiblat
+arah kiblat
