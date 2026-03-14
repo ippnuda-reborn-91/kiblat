@@ -12,43 +12,85 @@
     <style>
         :root { --primary: #2e7d32; --accent: #e53935; --bg: #f4f7f6; }
         body { margin: 0; background: var(--bg); font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .card { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 85%; max-width: 360px; }
-        .compass-base { position: relative; width: 250px; height: 250px; margin: 20px auto; border-radius: 50%; border: 8px solid var(--primary); background: #fff; }
+        
+        /* Ikon Informasi Pojok Kanan Atas */
+        .info-trigger {
+            position: absolute; top: 20px; right: 20px;
+            background: var(--primary); color: white;
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; cursor: pointer; z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .card { background: white; padding: 25px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 85%; max-width: 360px; position: relative; }
+        .compass-base { position: relative; width: 230px; height: 230px; margin: 20px auto; border-radius: 50%; border: 8px solid var(--primary); background: #fff; }
         .dir { position: absolute; font-weight: 900; font-size: 18px; color: #333; }
         .n { top: 10px; left: 50%; transform: translateX(-50%); color: var(--accent); }
         .e { right: 15px; top: 50%; transform: translateY(-50%); }
         .s { bottom: 10px; left: 50%; transform: translateX(-50%); }
         .w { left: 15px; top: 50%; transform: translateY(-50%); }
+        
         #pointer-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transition: transform 0.1s linear; }
-        .kaaba { position: absolute; top: 35px; left: 50%; transform: translateX(-50%); font-size: 35px; }
-        .needle { position: absolute; top: 50%; left: 50%; width: 5px; height: 85px; background: var(--primary); transform: translate(-50%, -100%); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
-        #error-box { display: none; background: #ffebee; color: #c62828; padding: 15px; border-radius: 15px; margin-top: 15px; font-weight: bold; font-size: 13px; }
-        button { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 50px; font-weight: bold; width: 100%; cursor: pointer; font-size: 16px; margin-top: 10px; }
-        #status { font-size: 12px; color: #666; margin: 10px 0; }
+        .kaaba { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); font-size: 35px; }
+        .needle { position: absolute; top: 50%; left: 50%; width: 5px; height: 80px; background: var(--primary); transform: translate(-50%, -100%); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+        
+        /* Huruf Kecil sesuai instruksi */
+        #status { font-size: 12px; color: #666; margin: 10px 0; text-transform: lowercase; }
+        #error-box { display: none; background: #ffebee; color: #c62828; padding: 15px; border-radius: 15px; margin-top: 15px; font-size: 12px; text-align: left; line-height: 1.4; }
+        button { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 50px; font-weight: bold; width: 100%; cursor: pointer; font-size: 16px; text-transform: lowercase; }
+
+        /* Modal Info */
+        #info-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 200;
+        }
+        .modal-content { background: white; width: 80%; max-width: 300px; padding: 20px; border-radius: 20px; font-size: 13px; text-align: left; position: relative; }
+        .close-modal { color: var(--accent); font-weight: bold; float: right; cursor: pointer; }
     </style>
 </head>
 <body>
 
+<div class="info-trigger" onclick="toggleModal(true)">i</div>
+
+<div id="info-modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="toggleModal(false)">tutup</span>
+        <h4 style="color: var(--primary); margin-top: 0;">cara instal & offline</h4>
+        <p>1. klik titik tiga di pojok kanan atas chrome.<br>
+           2. pilih menu <b>"instal aplikasi"</b> agar logo chrome hilang.<br><br>
+           aplikasi ini bisa digunakan tanpa internet (offline) saat anda berada di daerah sulit jangkauan. cukup aktifkan gps & sensor sebelum masuk daerah tersebut.</p>
+    </div>
+</div>
+
 <div class="card">
-    <h2 style="color:var(--primary); margin:0;">Kompas Ippnuda</h2>
-    <div id="status">Siap digunakan</div>
+    <h2 style="color:var(--primary); margin:0; font-size: 22px;">kompas ippnuda</h2>
+    <div id="status">siap digunakan</div>
 
     <div class="compass-base">
-        <div class="dir n">U</div><div class="dir e">T</div><div class="dir s">S</div><div class="dir w">B</div>
+        <div class="dir n">u</div><div class="dir e">t</div><div class="dir s">s</div><div class="dir w">b</div>
         <div id="pointer-wrapper">
             <div class="kaaba">🕋</div>
             <div class="needle"></div>
         </div>
     </div>
 
-    <div id="error-box">❌ SENSOR TIDAK DITEMUKAN<br>HP ini tidak mendukung fitur Magnetometer.</div>
-    <button id="main-btn">AKTIFKAN ARAH</button>
+    <div id="error-box">
+        <b>sensor tidak ditemukan:</b><br>
+        magnetometer adalah sensor perangkat keras di dalam hp yang berfungsi seperti jarum kompas fisik untuk mendeteksi medan magnet bumi. tanpa sensor ini, arah mata angin tidak bisa ditentukan secara otomatis.
+    </div>
+
+    <button id="main-btn">aktifkan arah</button>
 </div>
 
 <script>
+    function toggleModal(show) {
+        document.getElementById('info-modal').style.display = show ? 'flex' : 'none';
+    }
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error', err));
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('sw error', err));
         });
     }
 
@@ -60,12 +102,12 @@
     let hasSensor = false;
 
     btn.onclick = () => {
-        status.innerText = "Meminta GPS...";
+        status.innerText = "meminta gps...";
         navigator.geolocation.getCurrentPosition(pos => {
             qiblaAngle = calcQibla(pos.coords.latitude, pos.coords.longitude);
-            status.innerText = "Mengecek Sensor...";
+            status.innerText = "mengecek sensor...";
             checkSensor();
-        }, () => { status.innerText = "GPS Error!"; });
+        }, () => { status.innerText = "gps error!"; });
     };
 
     function checkSensor() {
@@ -78,9 +120,8 @@
             if (heading !== null) {
                 hasSensor = true;
                 clearTimeout(timer);
-                status.innerText = "Sensor Aktif (Offline)";
-                btn.innerText = "RE-KALIBRASI";
-                btn.onclick = () => location.reload();
+                status.innerText = "sensor aktif (offline)";
+                btn.style.display = "none";
                 window.addEventListener('deviceorientationabsolute', handleMove, true);
                 window.addEventListener('deviceorientation', handleMove, true);
             }
