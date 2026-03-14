@@ -48,12 +48,16 @@
             font-size: 16px;
         }
 
-        .compass-base { position: relative; width: 230px; height: 230px; margin: 20px auto; border-radius: 50%; border: 8px solid var(--primary); background: #fff; }
-        .dir { position: absolute; font-weight: 900; font-size: 18px; color: #333; }
-        .n { top: 10px; left: 50%; transform: translateX(-50%); color: var(--accent); }
-        .e { right: 15px; top: 50%; transform: translateY(-50%); }
-        .s { bottom: 10px; left: 50%; transform: translateX(-50%); }
-        .w { left: 15px; top: 50%; transform: translateY(-50%); }
+       .compass-base { 
+    position: relative; 
+    width: 230px; height: 230px; 
+    margin: 20px auto; 
+    border-radius: 50%; 
+    border: 8px solid var(--primary); 
+    background: #fff;
+    /* TAMBAHKAN BARIS INI */
+    transition: transform 0.1s linear; 
+}
         
         #pointer-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transition: transform 0.1s linear; }
         .kaaba { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); font-size: 35px; }
@@ -172,9 +176,20 @@
     }
 
     function handleMove(e) {
-        let heading = e.webkitCompassHeading || (360 - e.alpha);
-        if (heading != null) pointer.style.transform = `rotate(${qiblaAngle - heading}deg)`;
+    // 1. Ambil arah hadap HP (heading)
+    let heading = e.webkitCompassHeading || (360 - e.alpha);
+    
+    if (heading != null) {
+        // 2. PUTAR SELURUH PIRINGAN (base) agar U selalu ke Utara asli
+        // Kita memutar ke arah negatif heading
+        const ringBase = document.querySelector('.compass-base');
+        ringBase.style.transform = `rotate(${-heading}deg)`;
+        
+        // 3. PUTAR JARUM KIBLAT agar selalu menunjuk Ka'bah relatif terhadap Utara
+        // Karena piringan sudah berputar, jarum cukup menunjuk ke sudut kiblatnya saja
+        pointer.style.transform = `rotate(${qiblaAngle}deg)`;
     }
+}
 
     function calcQibla(lat, lng) {
         const p1 = lat * Math.PI/180, p2 = 21.4225 * Math.PI/180, dL = (39.8262 - lng) * Math.PI/180;
